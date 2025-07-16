@@ -665,9 +665,23 @@ def odunclerim_sayfasi():
         background: url('/static/kutuphaneresim.jpg') no-repeat center center fixed;
         background-size: cover;
     }
+    .sabit-kart {
+        max-width: 800px;
+        width: 70vw;
+        margin: 40px auto 0 auto;
+        min-height: 300px;
+        max-height: 600px;
+        display: flex;
+        flex-direction: column;
+    }
+    .scrollable-content {
+        max-height: 350px;
+        overflow-y: auto;
+        margin-bottom: 16px;
+    }
     </style>
     """)
-    with ui.card().classes('absolute-center w-2/3 max-w-2xl'):
+    with ui.card().classes('sabit-kart'):
         ui.label('Aldığım Kitaplar').classes('text-2xl font-bold self-center mb-4')
         user_id = nicegui_app.storage.user.get('user_id')
         if not user_id:
@@ -678,6 +692,7 @@ def odunclerim_sayfasi():
         if not oduncler:
             ui.label('Şu anda ödünç aldığınız kitap yok.').classes('text-center text-gray-500 mt-4')
         else:
+            ui.html('<div class="scrollable-content">')
             for odunc in oduncler:
                 with ui.row().classes('w-full items-center p-2 border-b'):
                     with ui.column().classes('flex-grow'):
@@ -695,6 +710,7 @@ def odunclerim_sayfasi():
                             ui.notify('Kitap teslim edildi olarak işaretlendi.', color='positive')
                             ui.navigate.to('/odunclerim')
                         ui.button('Teslim Et', on_click=lambda _, odunc_id=odunc['id']: teslim_et_handler(odunc_id), color='primary').props('dense')
+            ui.html('</div>')
         ui.button('Kitaplara Dön', on_click=lambda: ui.navigate.to('/kitaplar')).classes('mt-4 w-full')
 
 # --- Admin ödünç yönetim sayfası ---
@@ -707,9 +723,28 @@ def odunc_yonetim_sayfasi():
         background: url('/static/kutuphaneresim.jpg') no-repeat center center fixed;
         background-size: cover;
     }
+    .sabit-kart {
+        max-width: 900px;
+        width: 90vw;
+        margin: 40px auto 0 auto;
+        min-height: 300px;
+        max-height: 600px;
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+    }
+    .scrollable-content {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: 400px;
+        overflow-y: auto;
+        width: 100%;
+        box-sizing: border-box;
+        padding-right: 8px;
+    }
     </style>
     """)
-    with ui.card().classes('absolute-center w-5/6 max-w-4xl'):
+    with ui.card().classes('sabit-kart'):
         ui.label('Ödünç Alınan Kitaplar').classes('text-2xl font-bold self-center mb-4')
         # Tüm ödünçler (teslim edilmiş ve edilmemiş)
         conn = get_connection()
@@ -729,23 +764,23 @@ def odunc_yonetim_sayfasi():
         if not oduncler:
             ui.label('Henüz ödünç alınan kitap yok.').classes('text-center text-gray-500 mt-4')
         else:
-            for odunc in oduncler:
-                with ui.row().classes('w-full items-center p-2 border-b'):
-                    with ui.column().classes('flex-grow'):
-                        ui.label(f"Kitap: {odunc['ad']} (Yazar: {odunc['yazar']})").classes('font-bold')
-                        ui.label(f"Kullanıcı: {odunc['isim']} ({odunc['email']})").classes('text-sm text-blue-600')
-                        ui.label(f"Alış Tarihi: {odunc['alis_tarihi']} | Son Teslim: {odunc['teslim_tarihi']}").classes('text-sm text-gray-600')
-                        if odunc['teslim_edildi']:
-                            ui.label(f"Teslim Edildi: {odunc['teslim_edilme_tarihi']}").classes('text-green-700 text-sm')
-                        else:
-                            # Gecikme kontrolü
-                            bugun = datetime.date.today()
-                            if odunc['teslim_tarihi'] < bugun:
-                                ui.label('Teslim süresi geçti!').classes('text-red-600 text-sm')
+            with ui.element('div').classes('scrollable-content'):
+                for odunc in oduncler:
+                    with ui.row().classes('w-full items-center p-2 border-b'):
+                        with ui.column().classes('flex-grow'):
+                            ui.label(f"Kitap: {odunc['ad']} (Yazar: {odunc['yazar']})").classes('font-bold')
+                            ui.label(f"Kullanıcı: {odunc['isim']} ({odunc['email']})").classes('text-sm text-blue-600')
+                            ui.label(f"Alış Tarihi: {odunc['alis_tarihi']} | Son Teslim: {odunc['teslim_tarihi']}").classes('text-sm text-gray-600')
+                            if odunc['teslim_edildi']:
+                                ui.label(f"Teslim Edildi: {odunc['teslim_edilme_tarihi']}").classes('text-green-700 text-sm')
                             else:
-                                kalan = (odunc['teslim_tarihi'] - bugun).days
-                                ui.label(f"Kalan gün: {kalan}").classes('text-yellow-700 text-sm')
-        ui.button('Admin Paneline Dön', on_click=lambda: ui.navigate.to('/admin')).classes('mt-4 w-full')
+                                bugun = datetime.date.today()
+                                if odunc['teslim_tarihi'] < bugun:
+                                    ui.label('Teslim süresi geçti!').classes('text-red-600 text-sm')
+                                else:
+                                    kalan = (odunc['teslim_tarihi'] - bugun).days
+                                    ui.label(f"Kalan gün: {kalan}").classes('text-yellow-700 text-sm')
+        ui.button('Admin Paneline Dön', on _click=lambda: ui.navigate.to('/admin')).classes('mt-4 w-full')
 
 # --- 3. Uygulamayı Başlatma ---
 if __name__ in {"__main__", "__mp_main__"}:
@@ -753,5 +788,4 @@ if __name__ in {"__main__", "__mp_main__"}:
     admin_kullanicisi_olustur()
     eski_sifreleri_hashle()  # <-- Bir defa çalıştır, sonra silebilirsin
     ui.run(title="Kütüphane Sistemi", storage_secret="super-secret-key")
-
 
